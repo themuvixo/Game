@@ -1,0 +1,13 @@
+# name row frames frameDuration loop  (frame size 96x96)
+frame 96 96
+idle 0 6 0.140 1
+walk 1 8 0.090 1
+run 2 8 0.060 1
+jump 3 3 0.080 0
+fall 4 3 0.100 1
+land 5 3 0.050 0
+attack 6 5 0.050 0
+hurt 7 3 0.080 0
+death 8 8 0.100 0
+glide 9 6 0.040 1
+swim 10 6 0.100 1

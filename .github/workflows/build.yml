@@ -1,0 +1,81 @@
+name: Build Windows Portable
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      SFML_URL: https://www.sfml-dev.org/files/SFML-2.6.1-windows-vc17-64-bit.zip
+      SFML_ROOT: ${{ github.workspace }}\deps\SFML-2.6.1
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up MSVC (v143, x64)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Cache SFML
+        id: cache-sfml
+        uses: actions/cache@v4
+        with:
+          path: deps
+          key: sfml-2.6.1-vc17-x64
+      - name: Download and install SFML 2.6.1
+        if: steps.cache-sfml.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force deps | Out-Null
+          Invoke-WebRequest $env:SFML_URL -OutFile deps\sfml.zip
+          Expand-Archive deps\sfml.zip -DestinationPath deps -Force
+          if (!(Test-Path "$env:SFML_ROOT\lib\cmake\SFML\SFMLConfig.cmake")) { throw "SFML layout unexpected" }
+      - name: Configure CMake
+        shell: pwsh
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -T v143 -DSFML_DIR="$env:SFML_ROOT\lib\cmake\SFML"
+      - name: Build Release x64
+        run: cmake --build build --config Release --parallel
+      - name: Assemble portable folder
+        shell: pwsh
+        run: |
+          $out = "dist\AdventurePlatformer"
+          New-Item -ItemType Directory -Force $out | Out-Null
+          Copy-Item build\Release\AdventurePlatformer.exe $out
+          # SFML runtime DLLs (release) incl. OpenAL
+          foreach ($d in "sfml-graphics-2.dll","sfml-window-2.dll","sfml-system-2.dll","sfml-audio-2.dll","openal32.dll") {
+            Copy-Item "$env:SFML_ROOT\bin\$d" $out
+          }
+          # Visual C++ runtime (app-local deployment)
+          $redist = Get-ChildItem "$env:VCToolsRedistDir\x64" -Directory | Where-Object { $_.Name -like "Microsoft.VC*.CRT" } | Select-Object -First 1
+          Copy-Item "$($redist.FullName)\*.dll" $out
+          Copy-Item -Recurse assets "$out\assets"
+          Copy-Item README.md "$out\README.txt"
+          Copy-Item ASSET_CREDITS.md "$out\ASSET_CREDITS.txt"
+      - name: Verify runtime dependencies
+        shell: pwsh
+        run: |
+          $out = "dist\AdventurePlatformer"
+          $deps = & dumpbin /dependents "$out\AdventurePlatformer.exe" | Select-String "\.dll" | ForEach-Object { $_.ToString().Trim() }
+          $deps | ForEach-Object { Write-Host "needs: $_" }
+          $system = "KERNEL32","USER32","GDI32","ADVAPI32","SHELL32","OPENGL32","WINMM","OLE32","api-ms-win"
+          foreach ($d in $deps) {
+            $isSys = $false; foreach ($s in $system) { if ($d.ToUpper().StartsWith($s.ToUpper())) { $isSys = $true } }
+            if (-not $isSys -and -not (Test-Path "$out\$d")) { throw "Missing runtime dependency: $d" }
+          }
+      - name: Verify game assets
+        shell: pwsh
+        run: |
+          $a = "dist\AdventurePlatformer\assets"
+          $req = "fonts\NotoSans-Bold.ttf","characters\lumo.png","characters\lumo.anim","worldmap\map.png","worldmap\nodes.txt","shaders\post.frag","music\menu.ogg"
+          foreach ($r in $req) { if (!(Test-Path "$a\$r")) { throw "Missing asset $r" } }
+          $levels = (Get-ChildItem "$a\levels\*.txt").Count
+          if ($levels -ne 35) { throw "Expected 35 levels, found $levels" }
+          Write-Host "Assets OK ($levels levels)"
+      - name: Package ZIP
+        shell: pwsh
+        run: Compress-Archive -Path dist\AdventurePlatformer\* -DestinationPath AdventurePlatformer-Windows.zip -Force
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-portable
+          path: AdventurePlatformer-Windows.zip

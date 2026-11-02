@@ -1,0 +1,8 @@
+build/
+dist/
+deps/
+*.zip
+!assets/**
+.vs/
+*.user
+__pycache__/

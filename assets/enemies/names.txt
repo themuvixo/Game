@@ -1,0 +1,30 @@
+1 walker Mossling
+1 flyer Pollen Moth
+1 armored Barkback
+1 exploder Puffcap
+1 charger Thornboar
+1 shooter Seedspitter
+2 walker Drumbug
+2 flyer Flutternote
+2 armored Tuba Turtle
+2 exploder Cymbomb
+2 charger Bass Bull
+2 shooter Horn Turret
+3 walker Glitchbot
+3 flyer Neon Drone
+3 armored Riot Cube
+3 exploder Volt Bomb
+3 charger Turbo Rat
+3 shooter Laser Eye
+4 walker Snowpup
+4 flyer Frost Bat
+4 armored Glacier Crab
+4 exploder Snowbomb
+4 charger Yakcharger
+4 shooter Icicle Mage
+5 walker Ember Imp
+5 flyer Ash Wraith
+5 armored Magma Golem
+5 exploder Lava Blob
+5 charger Fire Hound
+5 shooter Pyre Totem
