@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 jobs:
   windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
     env:
       SFML_URL: https://www.sfml-dev.org/files/SFML-2.6.1-windows-vc17-64-bit.zip
       SFML_ROOT: ${{ github.workspace }}\deps\SFML-2.6.1
